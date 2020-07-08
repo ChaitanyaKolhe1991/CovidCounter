@@ -1,9 +1,11 @@
 package com.example.covidcounter.adapter
 
-import android.util.Log
+import android.content.Context
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.covidcounter.R
@@ -14,9 +16,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class MyItemRecyclerViewAdapter(
+    val context: Context,
     private val values: MutableList<Countries>
 ) : RecyclerView.Adapter<MyItemRecyclerViewAdapter.ViewHolder>() {
-
+    private var countryCode = "";
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.fragment_item, parent, false)
@@ -25,9 +28,13 @@ class MyItemRecyclerViewAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = values[position]
-        Log.e("Adapter", item.TotalConfirmed.toString())
         item.Date = getConvertedDate(item.Date)
         holder.bindData(item)
+        if (!!TextUtils.isEmpty(countryCode) && position == 0) {
+            holder.layoutContainer.setBackgroundColor(context.resources.getColor(android.R.color.darker_gray))
+        } else {
+            holder.layoutContainer.setBackgroundColor(context.resources.getColor(android.R.color.transparent))
+        }
     }
 
     fun getConvertedDate(date: String): String {
@@ -46,8 +53,12 @@ class MyItemRecyclerViewAdapter(
 
     override fun getItemCount(): Int = values.size
 
-    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    fun setCountryCode(countryCode: String) {
+        this.countryCode = countryCode
+    }
 
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val layoutContainer: LinearLayout = view.findViewById(R.id.layout_container)
         private val countryDataBinding: CountryDataBinding = DataBindingUtil.bind(view)!!
         fun bindData(countries: Countries) {
             countryDataBinding.countries = countries

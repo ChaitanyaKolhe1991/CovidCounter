@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
     lateinit var itemAdapter: MyItemRecyclerViewAdapter
     private lateinit var viewModel: MainViewModel
     var countryList = mutableListOf<Countries>()
-
+    var originalList = mutableListOf<Countries>()
     val output = SimpleDateFormat("ddMMMyy HH:mm:ss aa")
 
     lateinit var fabFilter: FloatingActionButton
@@ -77,16 +77,47 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 
     var sortId = CorUtility.TOTAL_DESCENDING
 
+    //Highlite Current Country
+    lateinit var currentCountry: Countries
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
-
         initializeView()
         manageFab()
         setupViewModel()
         setUpRecyclerView()
         setupObservers()
+    }
+
+    private fun initializeView() {
+        viewTotalRecover = findViewById(R.id.card_total_recover)
+        viewTotalDeath = findViewById(R.id.card_total_death)
+        viewTotal = findViewById(R.id.card_total)
+        viewLatest = findViewById(R.id.card_last_update)
+
+        fabFilter = findViewById(R.id.fab_filter)
+        fabSort = findViewById(R.id.fab_sort)
+
+        viewTotalRecover.findViewById<TextView>(R.id.text_title).text =
+            getString(R.string.str_Total)
+        viewTotalDeath.findViewById<TextView>(R.id.text_title).text = getString(R.string.str_death)
+        viewTotal.findViewById<TextView>(R.id.text_title).text = getString(R.string.str_affected)
+        viewLatest.findViewById<TextView>(R.id.text_title).text = getString(R.string.str_update)
+
+
+        viewTotalRecover.findViewById<CardView>(R.id.card_total_recover)
+            .setCardBackgroundColor(resources.getColor(R.color.colorPrimary))
+        viewTotalDeath.findViewById<CardView>(R.id.card_total_death)
+            .setCardBackgroundColor(resources.getColor(android.R.color.holo_red_dark))
+        viewTotal.findViewById<CardView>(R.id.card_total)
+            .setCardBackgroundColor(resources.getColor(R.color.colorAccent))
+        viewLatest.findViewById<CardView>(R.id.card_last_update)
+            .setCardBackgroundColor(resources.getColor(R.color.colorPrimaryDark))
+
+        viewLatest.findViewById<TextView>(R.id.text_new).visibility = View.GONE
+
     }
 
     private fun setUpRecyclerView() {
@@ -96,7 +127,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 //            setItemViewCacheSize(30)
             itemAdapter =
                 MyItemRecyclerViewAdapter(
-                    countryList
+                    context, countryList
                 )
             addItemDecoration(
                 DividerItemDecoration(
@@ -139,6 +170,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                         resource.data?.let { users ->
                             setSortedList(users.listCountries)
                             retrieveGlobal(users.global)
+                            originalList = users.listCountries as MutableList<Countries>
                         }
                     }
                     Status.ERROR -> {
@@ -206,9 +238,17 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
     }
 
     private fun retrieveCountryList(users: List<Countries>) {
-        Log.d("Countries ", " Countries--- " + users.size)
+
         countryList.clear()
         countryList.addAll(users.filter { countries -> countries.TotalConfirmed != 0 })
+
+        if (this::currentCountry.isInitialized && countryList.contains(currentCountry)) {
+            val index = countryList.indexOf(currentCountry)
+            currentCountry = countryList.get(index)
+            countryList.removeAt(index)
+            countryList[0] = currentCountry
+        }
+
         itemAdapter.notifyDataSetChanged()
     }
 
@@ -218,39 +258,9 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 
         }
         fabSort.setOnClickListener { view ->
-            /* val sortedAppsList = countryList.sortedBy { it.Country?.toString() }
-             retrieveCountryList(sortedAppsList)*/
             if (countryList.size > 0)
                 showSortByDialog()
         }
-    }
-
-    private fun initializeView() {
-        viewTotalRecover = findViewById(R.id.card_total_recover)
-        viewTotalDeath = findViewById(R.id.card_total_death)
-        viewTotal = findViewById(R.id.card_total)
-        viewLatest = findViewById(R.id.card_last_update)
-
-        fabFilter = findViewById(R.id.fab_filter)
-        fabSort = findViewById(R.id.fab_sort)
-
-        viewTotalRecover.findViewById<TextView>(R.id.text_title).text = "Total Recovered"
-        viewTotalDeath.findViewById<TextView>(R.id.text_title).text = "Total Death"
-        viewTotal.findViewById<TextView>(R.id.text_title).text = "Total Affected"
-        viewLatest.findViewById<TextView>(R.id.text_title).text = "Last Updated"
-
-
-        viewTotalRecover.findViewById<CardView>(R.id.card_total_recover)
-            .setCardBackgroundColor(resources.getColor(R.color.colorPrimary))
-        viewTotalDeath.findViewById<CardView>(R.id.card_total_death)
-            .setCardBackgroundColor(resources.getColor(android.R.color.holo_red_dark))
-        viewTotal.findViewById<CardView>(R.id.card_total)
-            .setCardBackgroundColor(resources.getColor(R.color.colorAccent))
-        viewLatest.findViewById<CardView>(R.id.card_last_update)
-            .setCardBackgroundColor(resources.getColor(R.color.colorPrimaryDark))
-
-        viewLatest.findViewById<TextView>(R.id.text_new).visibility = View.GONE
-
     }
 
     override fun onStart() {
@@ -295,13 +305,19 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                         lastKnownLocation!!.latitude,
                         lastKnownLocation!!.longitude, 1
                     )
-                if (addresses != null && addresses.size > 0) {
+                if (addresses != null && addresses.size > 0 && itemAdapter != null) {
 
+                    itemAdapter.setCountryCode(addresses[0].countryCode)
                     Log.e(
                         "Main Activity",
                         "Location " + addresses[0].countryCode + "//"
                                 + addresses[0].countryName + "//"
                     )
+                    currentCountry = Countries().apply {
+                        Country = addresses[0].countryName
+                        CountryCode = addresses[0].countryCode
+                    }
+
                 }
             } catch (e: Exception) {
 
