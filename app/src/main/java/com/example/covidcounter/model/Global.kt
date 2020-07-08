@@ -3,10 +3,10 @@ package com.example.covidcounter.model
 import java.io.Serializable
 
 class Global : Serializable {
-    val NewConfirmed: Int = 0
-    val TotalConfirmed: Int = 0
-    val NewDeaths: Int = 0
-    val TotalDeaths: Int = 0
-    val NewRecovered: Int = 0
-    val TotalRecovered: Int = 0
+    var NewConfirmed: Int = 0
+    var TotalConfirmed: Int = 0
+    var NewDeaths: Int = 0
+    var TotalDeaths: Int = 0
+    var NewRecovered: Int = 0
+    var TotalRecovered: Int = 0
 }

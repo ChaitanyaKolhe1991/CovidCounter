@@ -7,13 +7,13 @@ class Countries : Serializable {
 
     public var Country: String = ""
     public var CountryCode: String = ""
-    public val Slug: String = ""
-    public val NewConfirmed: Int = 0
-    public val TotalConfirmed: Int = 0
-    public val NewDeaths: Int = 0
-    public val TotalDeaths: Int = 0
-    public val NewRecovered: Int = 0
-    public val TotalRecovered: Int = 0
+    public var Slug: String = ""
+    public var NewConfirmed: Int = 0
+    public var TotalConfirmed: Int = 0
+    public var NewDeaths: Int = 0
+    public var TotalDeaths: Int = 0
+    public var NewRecovered: Int = 0
+    public var TotalRecovered: Int = 0
     public var Date: String = ""
 
     override fun equals(other: Any?): Boolean {

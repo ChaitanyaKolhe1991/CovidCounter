@@ -8,9 +8,14 @@ import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.view.Window
+import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +31,7 @@ import com.example.covidcounter.adapter.MyItemRecyclerViewAdapter
 import com.example.covidcounter.api.RetrofitBuilder
 import com.example.covidcounter.model.Countries
 import com.example.covidcounter.model.Global
+import com.example.covidcounter.model.Summary
 import com.example.covidcounter.utils.CorUtility
 import com.example.covidcounter.utils.Status
 import com.example.covidcounter.viewmodel.MainViewModel
@@ -39,28 +45,23 @@ import java.util.*
 class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener,
     View.OnClickListener {
 
+    //Views
     lateinit var viewTotalRecover: View
     lateinit var viewTotalDeath: View
     lateinit var viewTotal: View
     lateinit var viewLatest: View
 
-    lateinit var textTRec: TextView
-    lateinit var textTRecN: TextView
+    lateinit var fabFilter: FloatingActionButton
+    lateinit var fabSort: FloatingActionButton
 
-    lateinit var textTDeath: TextView
-    lateinit var textTDeathN: TextView
-
-    lateinit var textTAffect: TextView
-    lateinit var textTAffectN: TextView
     lateinit var itemAdapter: MyItemRecyclerViewAdapter
+
     private lateinit var viewModel: MainViewModel
     var countryList = mutableListOf<Countries>()
     var originalList = mutableListOf<Countries>()
     val output = SimpleDateFormat("ddMMMyy HH:mm:ss aa")
 
-    lateinit var fabFilter: FloatingActionButton
-    lateinit var fabSort: FloatingActionButton
-
+    //Get Location
     var lastKnownLocation: Location? = null
 
     //Sorting
@@ -75,10 +76,16 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
     var tglBtnRecDown: ToggleButton? = null
     var sortAlertDialog: AlertDialog? = null
 
+    //Default Sorting
     var sortId = CorUtility.TOTAL_DESCENDING
 
     //Highlite Current Country
     lateinit var currentCountry: Countries
+
+    //Call Every 2 min
+    val dayInMillis: Long = 1000 * 60 * 2
+    lateinit var mainHandler: Handler
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +96,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
         setupViewModel()
         setUpRecyclerView()
         setupObservers()
+        mainHandler = Handler(Looper.getMainLooper())
     }
 
     private fun initializeView() {
@@ -118,6 +126,15 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 
         viewLatest.findViewById<TextView>(R.id.text_new).visibility = View.GONE
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val window: Window = getWindow()
+            window.apply {
+                addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+                clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+                statusBarColor = resources.getColor(R.color.colorPrimary)
+                navigationBarColor = resources.getColor(R.color.colorPrimary)
+            }
+        }
     }
 
     private fun setUpRecyclerView() {
@@ -156,7 +173,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
     private fun setupViewModel() {
         viewModel = ViewModelProviders.of(
             this,
-            ViewModelFactory(ApiHelper(RetrofitBuilder.apiService))
+            ViewModelFactory(application, ApiHelper(RetrofitBuilder.apiService))
         ).get(MainViewModel::class.java)
     }
 
@@ -167,10 +184,8 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                     Status.SUCCESS -> {
                         recyclerView.visibility = View.VISIBLE
                         progressBar.visibility = View.GONE
-                        resource.data?.let { users ->
-                            setSortedList(users.listCountries)
-                            retrieveGlobal(users.global)
-                            originalList = users.listCountries as MutableList<Countries>
+                        resource.data?.let { summary ->
+                            bindSummary(summary)
                         }
                     }
                     Status.ERROR -> {
@@ -186,8 +201,17 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                 }
             }
         })
+
+        viewModel.getLatestSummary().observe(this, Observer { summary ->
+            bindSummary(summary)
+        })
     }
 
+    fun bindSummary(summary: Summary) {
+        setSortedList(summary.listCountries)
+        retrieveGlobal(summary.global)
+        originalList = summary.listCountries as MutableList<Countries>
+    }
 
     private fun retrieveGlobal(global: Global) {
 
@@ -255,7 +279,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 
     private fun manageFab() {
         fabFilter.setOnClickListener { view ->
-
+            viewModel.fetchLatestData()
         }
         fabSort.setOnClickListener { view ->
             if (countryList.size > 0)
@@ -263,13 +287,10 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-
-    }
-
     override fun onResume() {
         super.onResume()
+        mainHandler.postDelayed(updateSummaryTask, dayInMillis)
+
         if (CorUtility.isLocationPermissionAvailable(context = this)) {
             getDeviceLastKnownLocation()
         } else {
@@ -317,6 +338,16 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                         Country = addresses[0].countryName
                         CountryCode = addresses[0].countryCode
                     }
+
+                    if (this::currentCountry.isInitialized && countryList.contains(currentCountry)) {
+                        val index = countryList.indexOf(currentCountry)
+                        currentCountry = countryList.get(index)
+                        countryList.removeAt(index)
+                        countryList[0] = currentCountry
+                        itemAdapter.notifyItemRemoved(index)
+                        itemAdapter.notifyItemChanged(0)
+                    }
+
 
                 }
             } catch (e: Exception) {
@@ -482,9 +513,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                     } else if (tglBtnRecDown!!.isChecked) {
                         sortId = CorUtility.REC_DESCENDING
                         sortedAppsList = countryList.sortedByDescending { it.TotalRecovered }
-
                     }
-
                     retrieveCountryList(sortedAppsList)
                 } else {
 
@@ -492,10 +521,18 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                 sortAlertDialog!!.dismiss()
             }
             R.id.btn_sort_cancel -> sortAlertDialog!!.dismiss()
-
         }
-
     }
 
+    override fun onPause() {
+        super.onPause()
+        mainHandler.removeCallbacks(updateSummaryTask)
+    }
 
+    private val updateSummaryTask = object : Runnable {
+        override fun run() {
+            viewModel.fetchLatestData()
+            mainHandler.postDelayed(this, dayInMillis)
+        }
+    }
 }
