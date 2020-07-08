@@ -112,4 +112,11 @@
     <string name="str_new_cased">New Cases</string>
     <string name="str_new_death">New Death</string>
     <string name="str_new_recovered">New Recovered</string>
+    <string name="str_sort_by">Sort By</string>
+    <string name="str_alphabetical">Alphabetical</string>
+    <string name="str_total_cases">Total Cases</string>
+    <string name="str_deaths_small">Deaths</string>
+    <string name="str_rec_small">Recovered</string>
+    <string name="cancel">Cancel</string>
+    <string name="str_ok">Ok</string>
 </resources>
