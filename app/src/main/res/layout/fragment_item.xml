@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data class="CountryDataBinding">
+
+        <variable
+            name="countries"
+            type="com.example.covidcounter.model.Countries" />
+
+        <import type="com.example.covidcounter.model.Countries" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/style_text_label"
+                android:text="@{countries.slug}"
+                tools:text="@string/str_country" />
+
+            <TextView
+                style="@style/style_text_label"
+                android:text="@{String.valueOf(countries.totalConfirmed)}"
+                tools:text="@string/str_total_n_cases" />
+
+            <TextView
+                style="@style/style_text_label"
+                android:text="@{String.valueOf(countries.totalDeaths)}"
+                tools:text="@string/str_deaths" />
+
+            <TextView
+                style="@style/style_text_label"
+                android:text="@{String.valueOf(countries.totalRecovered)}"
+                tools:text="@string/str_recovered" />
+        </LinearLayout>
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/style_text_val"
+                android:text="@{countries.date}"
+                tools:text="@string/str_country" />
+
+            <TextView
+                style="@style/style_text_val"
+                android:text='@{"+"+String.valueOf(countries.newConfirmed)}'
+                tools:text="@string/str_total_n_cases" />
+
+            <TextView
+                style="@style/style_text_val"
+                android:text='@{"+"+String.valueOf(countries.newDeaths)}'
+                tools:text="@string/str_deaths" />
+
+            <TextView
+                style="@style/style_text_val"
+                android:text='@{"+"+String.valueOf(countries.newRecovered)}'
+                tools:text="@string/str_recovered" />
+        </LinearLayout>
+    </LinearLayout>
+</layout>
