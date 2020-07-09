@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.view.Window
@@ -38,6 +39,7 @@ import com.example.covidcounter.utils.Status
 import com.example.covidcounter.viewmodel.MainViewModel
 import com.example.covidcounter.viewmodel.ViewModelFactory
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.android.synthetic.main.content_main.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -86,6 +88,13 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
     //Call Every 2 min
     val dayInMillis: Long = 1000 * 60 * 2
     lateinit var mainHandler: Handler
+
+    //Filter
+    val items = listOf("Total Cases", "Deaths", "Recovered")
+
+    var selectedPos = 0
+    var greaterThan = 0
+    var lessThan = 0
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -185,6 +194,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                     Status.SUCCESS -> {
                         recyclerView.visibility = View.VISIBLE
                         progressBar.visibility = View.GONE
+                        textNoData.visibility = View.GONE
                         resource.data?.let { summary ->
                             bindSummary(summary)
                         }
@@ -192,12 +202,14 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                     Status.ERROR -> {
                         recyclerView.visibility = View.VISIBLE
                         progressBar.visibility = View.GONE
+                        textNoData.visibility = View.VISIBLE
                         Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
                         Log.e("Main Activity ", "it.message " + it.message)
                     }
                     Status.LOADING -> {
                         progressBar.visibility = View.VISIBLE
                         recyclerView.visibility = View.GONE
+                        textNoData.visibility = View.GONE
                     }
                 }
             }
@@ -209,7 +221,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
     }
 
     fun bindSummary(summary: Summary) {
-        setSortedList(summary.listCountries)
+        setFilterAndSortList(selectedPos, greaterThan, lessThan, summary.listCountries)
         retrieveGlobal(summary.global)
         originalList = summary.listCountries as MutableList<Countries>
     }
@@ -258,11 +270,11 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
             sortedAppsList = countryList.sortedByDescending { it.TotalRecovered }
 
         }
-        retrieveCountryList(sortedAppsList)
+        setCountryListToAdapter(sortedAppsList)
 
     }
 
-    private fun retrieveCountryList(users: List<Countries>) {
+    private fun setCountryListToAdapter(users: List<Countries>) {
 
         countryList.clear()
         countryList.addAll(users.filter { countries -> countries.TotalConfirmed != 0 })
@@ -275,6 +287,8 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
         }
 
         itemAdapter.notifyDataSetChanged()
+        if (countryList.size == 0)
+            textNoData.visibility = View.VISIBLE else textNoData.visibility = View.GONE
     }
 
 
@@ -389,20 +403,119 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
             getLayoutInflater().inflate(R.layout.layout_filter, null, false)
         alertDialogBuilder.setView(view)
 
-        val items = listOf("Material", "Design", "Components", "Android")
-        val adapter = ArrayAdapter(this@MainActivity, R.layout.layout_spinner_text, items)
-        view.findViewById<Spinner>(R.id.spinner)?.adapter = adapter
+
+        val arrayAdapter = ArrayAdapter(this@MainActivity, R.layout.layout_spinner_text, items)
+
+        var spinner = view.findViewById<Spinner>(R.id.spinner)
+        var txtGreater = view.findViewById<TextInputEditText>(R.id.edit_greater)
+        var txtLess = view.findViewById<TextInputEditText>(R.id.edit_less)
+        spinner?.adapter = arrayAdapter
+
+        spinner.setSelection(selectedPos)
+
+        if (greaterThan != 0)
+            txtGreater.setText(greaterThan.toString())
+
+        if (lessThan != 0)
+            txtLess.setText(lessThan.toString())
 
         alertDialogBuilder.setNeutralButton(resources.getString(R.string.cancel)) { dialogInterface: DialogInterface, i: Int ->
+            sortAlertDialog!!.dismiss()
         }
         alertDialogBuilder.setPositiveButton(resources.getString(R.string.str_ok)) { dialogInterface: DialogInterface, i: Int ->
+            val grater =
+                if (!TextUtils.isEmpty(txtGreater?.text.toString())) txtGreater?.text.toString()
+                    .toInt() else 0
+
+            val less =
+                if (!TextUtils.isEmpty(txtLess?.text.toString())) txtLess?.text.toString()
+                    .toInt() else 0
+
+            setFilterAndSortList(spinner.selectedItemPosition, grater, less, originalList)
         }
         alertDialogBuilder.setNegativeButton(resources.getString(R.string.str_clear)) { dialogInterface: DialogInterface, i: Int ->
-            retrieveCountryList(originalList)
+            selectedPos = 0
+            greaterThan = 0
+            lessThan = 0
+            setSortedList(originalList)
         }
+
         sortAlertDialog = alertDialogBuilder.create()
 
         sortAlertDialog!!.show()
+    }
+
+    private fun setFilterAndSortList(
+        selectedItemPosition: Int,
+        grater: Int,
+        less: Int,
+        countryList: List<Countries>
+    ) {
+
+        val filterList = mutableListOf<Countries>()
+        Log.e("Main ", "originalList " + countryList.size)
+
+        selectedPos = selectedItemPosition
+        greaterThan = grater
+        lessThan = less
+
+        if (selectedItemPosition == 0) {
+// TotalConfirmed
+            if (grater == 0 && less == 0) { //No filter
+                filterList.addAll(countryList)
+            } else if (grater != 0 && less == 0) {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalConfirmed >= grater
+                })
+            } else if (grater == 0 && less != 0) {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalConfirmed <= less
+                })
+            } else {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalConfirmed in grater..less
+                })
+            }
+        } else if (selectedItemPosition == 1) {
+// TotalDeaths
+            if (grater == 0 && less == 0) {//No filter
+                filterList.addAll(countryList)
+            } else if (grater != 0 && less == 0) {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalDeaths >= grater
+                })
+            } else if (grater == 0 && less != 0) {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalDeaths <= less
+                })
+            } else {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalDeaths in grater..less
+                })
+            }
+        } else {
+            //TotalRecovered
+            if (grater == 0 && less == 0) {//No filter
+                filterList.addAll(countryList)
+            } else if (grater != 0 && less == 0) {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalRecovered >= grater
+                })
+            } else if (grater == 0 && less != 0) {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalRecovered <= less
+                })
+            } else {
+                filterList.addAll(originalList.filter { countries ->
+                    countries.TotalRecovered in grater..less
+                })
+            }
+        }
+
+        Log.e("Main ", "after originalList " + originalList.size)
+        Log.e("Main ", "after filterList " + filterList.size)
+        setSortedList(filterList)
+
     }
 
 
@@ -461,9 +574,13 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
                 sortId = CorUtility.REC_DESCENDING
                 sortedAppsList = countryList.sortedByDescending { it.TotalRecovered }
             }
-            retrieveCountryList(sortedAppsList)
+            setCountryListToAdapter(sortedAppsList)
         } else {
-
+            Toast.makeText(
+                this@MainActivity,
+                "You haven't selected any sorting method",
+                Toast.LENGTH_SHORT
+            ).show()
         }
         sortAlertDialog!!.dismiss()
     }

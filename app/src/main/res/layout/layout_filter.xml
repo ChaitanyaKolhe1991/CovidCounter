@@ -34,11 +34,12 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Greater Than"
+            android:hint="@string/str_greater"
             app:endIconMode="clear_text"
             app:startIconDrawable="@drawable/ic_baseline_trending_up_24">
 
             <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_greater"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="number" />
@@ -48,11 +49,12 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Less Than"
+            android:hint="@string/str_less"
             app:endIconMode="clear_text"
             app:startIconDrawable="@drawable/ic_baseline_trending_down_24">
 
             <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_less"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="number" />

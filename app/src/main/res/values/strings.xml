@@ -31,10 +31,13 @@
     <string name="str_deaths_small">Deaths</string>
     <string name="str_rec_small">Recovered</string>
     <string name="cancel">Cancel</string>
-    <string name="str_clear">Clear Filter</string>
+    <string name="str_clear">Clear Applied Filter</string>
     <string name="str_ok">Ok</string>
     <string name="str_Total">Total Recovered</string>
     <string name="str_death">Total Death</string>
     <string name="str_affected">Total Affected</string>
     <string name="str_update">Last Updated</string>
+    <string name="str_greater">Greater Than</string>
+    <string name="str_less">Less Than</string>
+    <string name="str_no_data">No Data Found</string>
 </resources>
