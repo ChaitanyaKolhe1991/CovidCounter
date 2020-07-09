@@ -8,8 +8,7 @@
         android:layout_height="wrap_content"
         android:padding="@dimen/padding12dp"
         android:text="@string/str_sort_by"
-        android:textColor="@android:color/black"
-        android:textSize="20sp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
         android:textStyle="bold" />
 
     <LinearLayout
@@ -187,36 +186,4 @@
     <Space
         android:layout_width="match_parent"
         android:layout_height="@dimen/padding4dp" />
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/padding24dp"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:weightSum="2">
-
-
-        <Button
-            android:id="@+id/btn_sort_cancel"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@android:color/darker_gray"
-            android:text="@string/cancel"
-            android:textColor="@color/black_overlay"
-            android:typeface="sans" />
-
-        <Button
-            android:id="@+id/btn_sort_ok"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@color/colorPrimaryDark"
-            android:text="@string/str_ok"
-            android:textColor="@android:color/white"
-            android:typeface="sans" />
-    </LinearLayout>
-
 </LinearLayout>

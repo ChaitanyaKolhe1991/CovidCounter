@@ -3,6 +3,7 @@ package com.example.covidcounter
 import ApiHelper
 import android.Manifest
 import android.content.Context
+import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.location.Address
 import android.location.Geocoder
@@ -116,7 +117,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 
 
         viewTotalRecover.findViewById<CardView>(R.id.card_total_recover)
-            .setCardBackgroundColor(resources.getColor(R.color.colorPrimary))
+            .setCardBackgroundColor(resources.getColor(android.R.color.holo_blue_light))
         viewTotalDeath.findViewById<CardView>(R.id.card_total_death)
             .setCardBackgroundColor(resources.getColor(android.R.color.holo_red_dark))
         viewTotal.findViewById<CardView>(R.id.card_total)
@@ -279,7 +280,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 
     private fun manageFab() {
         fabFilter.setOnClickListener { view ->
-            viewModel.fetchLatestData()
+            showFilterDialog()
         }
         fabSort.setOnClickListener { view ->
             if (countryList.size > 0)
@@ -381,23 +382,90 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
         }
     }
 
+    private fun showFilterDialog() {
+        val alertDialogBuilder =
+            AlertDialog.Builder(this)
+        val view: View =
+            getLayoutInflater().inflate(R.layout.layout_filter, null, false)
+        alertDialogBuilder.setView(view)
+
+        val items = listOf("Material", "Design", "Components", "Android")
+        val adapter = ArrayAdapter(this@MainActivity, R.layout.layout_spinner_text, items)
+        view.findViewById<Spinner>(R.id.spinner)?.adapter = adapter
+
+        alertDialogBuilder.setNeutralButton(resources.getString(R.string.cancel)) { dialogInterface: DialogInterface, i: Int ->
+        }
+        alertDialogBuilder.setPositiveButton(resources.getString(R.string.str_ok)) { dialogInterface: DialogInterface, i: Int ->
+        }
+        alertDialogBuilder.setNegativeButton(resources.getString(R.string.str_clear)) { dialogInterface: DialogInterface, i: Int ->
+            retrieveCountryList(originalList)
+        }
+        sortAlertDialog = alertDialogBuilder.create()
+
+        sortAlertDialog!!.show()
+    }
+
+
     private fun showSortByDialog() {
         val alertDialogBuilder =
             AlertDialog.Builder(this)
         val view: View =
             getLayoutInflater().inflate(R.layout.layout_sort, null, false)
         alertDialogBuilder.setView(view)
+
+
+        alertDialogBuilder.setNeutralButton(resources.getString(R.string.cancel)) { dialogInterface: DialogInterface, i: Int ->
+            sortAlertDialog?.dismiss()
+        }
+        alertDialogBuilder.setPositiveButton(resources.getString(R.string.str_ok)) { dialogInterface: DialogInterface, i: Int ->
+            sortOkClick()
+        }
+
         sortAlertDialog = alertDialogBuilder.create()
-        val buttonCancle: Button
-        val buttonOk: Button
-        buttonCancle =
-            view.findViewById<View>(R.id.btn_sort_cancel) as Button
-        buttonOk = view.findViewById<View>(R.id.btn_sort_ok) as Button
         initializeDialogControls(view)
         setInitialToggleSelection()
-        buttonCancle.setOnClickListener(this)
-        buttonOk.setOnClickListener(this)
         sortAlertDialog!!.show()
+    }
+
+
+    fun sortOkClick() {
+        if (anythingChecked()) {
+            var sortedAppsList = countryList.sortedBy { it.Country }
+            if (tglBtnAlphabeticalUp!!.isChecked) {
+                sortId = CorUtility.ALPHABETICAL_ASCENDING
+                sortedAppsList = countryList.sortedBy { it.Country }
+            } else if (tglBtnAlphabeticalDown!!.isChecked) {
+                sortId = CorUtility.ALPHABETICAL_DESCENDING
+                sortedAppsList = countryList.sortedByDescending { it.Country }
+            } else if (tglBtnTotalUp!!.isChecked) {
+                sortId = CorUtility.TOTAL_ASCENDING
+                sortedAppsList = countryList.sortedBy { it.TotalConfirmed }
+
+            } else if (tglBtnTotalDown!!.isChecked) {
+                sortId = CorUtility.TOTAL_DESCENDING
+                sortedAppsList = countryList.sortedByDescending { it.TotalConfirmed }
+
+            } else if (tglBtnDeathUp!!.isChecked) {
+                sortId = CorUtility.DEATH_ASCENDING
+                sortedAppsList = countryList.sortedBy { it.TotalDeaths }
+
+            } else if (tglBtnDeathDown!!.isChecked) {
+                sortId = CorUtility.DEATH_DESCENDING
+                sortedAppsList = countryList.sortedByDescending { it.TotalDeaths }
+
+            } else if (tglBtnRecUp!!.isChecked) {
+                sortId = CorUtility.REC_ASCENDING
+                sortedAppsList = countryList.sortedBy { it.TotalRecovered }
+
+            } else if (tglBtnRecDown!!.isChecked) {
+                sortId = CorUtility.REC_DESCENDING
+                sortedAppsList = countryList.sortedByDescending { it.TotalRecovered }
+            }
+            retrieveCountryList(sortedAppsList)
+        } else {
+
+        }
+        sortAlertDialog!!.dismiss()
     }
 
     private fun initializeDialogControls(view: View) {
@@ -480,47 +548,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
     override fun onClick(v: View?) {
         when (v!!.id) {
             R.id.fab_sort -> if (itemAdapter != null && itemAdapter.itemCount > 0) showSortByDialog()
-            R.id.btn_sort_ok -> {
-                if (anythingChecked()) {
 
-                    var sortedAppsList = countryList.sortedBy { it.Country }
-                    if (tglBtnAlphabeticalUp!!.isChecked) {
-                        sortId = CorUtility.ALPHABETICAL_ASCENDING
-                        sortedAppsList = countryList.sortedBy { it.Country }
-                    } else if (tglBtnAlphabeticalDown!!.isChecked) {
-                        sortId = CorUtility.ALPHABETICAL_DESCENDING
-                        sortedAppsList = countryList.sortedByDescending { it.Country }
-                    } else if (tglBtnTotalUp!!.isChecked) {
-                        sortId = CorUtility.TOTAL_ASCENDING
-                        sortedAppsList = countryList.sortedBy { it.TotalConfirmed }
-
-                    } else if (tglBtnTotalDown!!.isChecked) {
-                        sortId = CorUtility.TOTAL_DESCENDING
-                        sortedAppsList = countryList.sortedByDescending { it.TotalConfirmed }
-
-                    } else if (tglBtnDeathUp!!.isChecked) {
-                        sortId = CorUtility.DEATH_ASCENDING
-                        sortedAppsList = countryList.sortedBy { it.TotalDeaths }
-
-                    } else if (tglBtnDeathDown!!.isChecked) {
-                        sortId = CorUtility.DEATH_DESCENDING
-                        sortedAppsList = countryList.sortedByDescending { it.TotalDeaths }
-
-                    } else if (tglBtnRecUp!!.isChecked) {
-                        sortId = CorUtility.REC_ASCENDING
-                        sortedAppsList = countryList.sortedBy { it.TotalRecovered }
-
-                    } else if (tglBtnRecDown!!.isChecked) {
-                        sortId = CorUtility.REC_DESCENDING
-                        sortedAppsList = countryList.sortedByDescending { it.TotalRecovered }
-                    }
-                    retrieveCountryList(sortedAppsList)
-                } else {
-
-                }
-                sortAlertDialog!!.dismiss()
-            }
-            R.id.btn_sort_cancel -> sortAlertDialog!!.dismiss()
         }
     }
 
