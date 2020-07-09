@@ -30,7 +30,7 @@ class MyItemRecyclerViewAdapter(
         val item = values[position]
         item.Date = getConvertedDate(item.Date)
         holder.bindData(item)
-        if (!TextUtils.isEmpty(countryCode) && position == 0) {
+        if (!TextUtils.isEmpty(countryCode) && item.CountryCode.equals(countryCode) && position == 0) {
             holder.layoutContainer.setBackgroundColor(context.resources.getColor(android.R.color.darker_gray))
         } else {
             holder.layoutContainer.setBackgroundColor(context.resources.getColor(android.R.color.transparent))
