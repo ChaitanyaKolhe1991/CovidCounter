@@ -15,9 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.util.Log
-import android.view.View
-import android.view.Window
-import android.view.WindowManager
+import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -39,6 +37,7 @@ import com.example.covidcounter.utils.Status
 import com.example.covidcounter.viewmodel.MainViewModel
 import com.example.covidcounter.viewmodel.ViewModelFactory
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.android.synthetic.main.content_main.*
 import java.text.SimpleDateFormat
@@ -107,6 +106,23 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
         setUpRecyclerView()
         setupObservers()
         mainHandler = Handler(Looper.getMainLooper())
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_scrolling, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_refresh -> {
+                viewModel.fetchLatestData()
+            }
+            R.id.action_clear_filter -> {
+                clearAllFilter()
+            }
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     private fun initializeView() {
@@ -294,11 +310,26 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 
     private fun manageFab() {
         fabFilter.setOnClickListener { view ->
-            showFilterDialog()
+            if (countryList.size > 0)
+                showFilterDialog()
+            else
+                Snackbar.make(
+                    view,
+                    "Sorry , Some error occurred . Please try again lated",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+
         }
         fabSort.setOnClickListener { view ->
             if (countryList.size > 0)
                 showSortByDialog()
+            else
+                Snackbar.make(
+                    view,
+                    "Sorry , Some error occurred . Please try again lated",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+
         }
     }
 
@@ -434,15 +465,19 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
             setFilterAndSortList(spinner.selectedItemPosition, grater, less, originalList)
         }
         alertDialogBuilder.setNegativeButton(resources.getString(R.string.str_clear)) { dialogInterface: DialogInterface, i: Int ->
-            selectedPos = 0
-            greaterThan = 0
-            lessThan = 0
-            setSortedList(originalList)
+            clearAllFilter()
         }
 
         sortAlertDialog = alertDialogBuilder.create()
 
         sortAlertDialog!!.show()
+    }
+
+    private fun clearAllFilter() {
+        selectedPos = 0
+        greaterThan = 0
+        lessThan = 0
+        setSortedList(originalList)
     }
 
     private fun setFilterAndSortList(

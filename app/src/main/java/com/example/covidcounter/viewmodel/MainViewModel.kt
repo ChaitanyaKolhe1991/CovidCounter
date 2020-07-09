@@ -37,7 +37,9 @@ class MainViewModel(application: Application, private val mainRepository: MainRe
                 summary.postValue(response.body())
             }
 
-            override fun onFailure(call: Call<Summary?>, t: Throwable) {}
+            override fun onFailure(call: Call<Summary?>, t: Throwable) {
+
+            }
         })
     }
 }
