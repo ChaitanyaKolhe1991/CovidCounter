@@ -125,6 +125,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
         return super.onOptionsItemSelected(item)
     }
 
+    //Iniitalize All views
     private fun initializeView() {
         viewTotalRecover = findViewById(R.id.card_total_recover)
         viewTotalDeath = findViewById(R.id.card_total_death)
@@ -196,6 +197,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
 
     }
 
+    //Viewmodel - Initialize and set observrs
     private fun setupViewModel() {
         viewModel = ViewModelProviders.of(
             this,
@@ -242,6 +244,7 @@ class MainActivity : AppCompatActivity(), CompoundButton.OnCheckedChangeListener
         originalList = summary.listCountries as MutableList<Countries>
     }
 
+    //set global 
     private fun retrieveGlobal(global: Global) {
 
         viewTotalRecover.findViewById<TextView>(R.id.text_total).text =
